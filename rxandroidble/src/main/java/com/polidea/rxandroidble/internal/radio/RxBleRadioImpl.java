@@ -1,5 +1,7 @@
 package com.polidea.rxandroidble.internal.radio;
 
+import android.os.Build;
+
 import com.polidea.rxandroidble.internal.RxBleLog;
 import com.polidea.rxandroidble.internal.RxBleRadio;
 import com.polidea.rxandroidble.internal.RxBleRadioOperation;
@@ -7,13 +9,22 @@ import com.polidea.rxandroidble.internal.RxBleRadioOperation;
 import java.util.concurrent.Semaphore;
 
 import rx.Observable;
+import rx.Scheduler;
 import rx.android.schedulers.AndroidSchedulers;
 
 public class RxBleRadioImpl implements RxBleRadio {
 
     private OperationPriorityFifoBlockingQueue queue = new OperationPriorityFifoBlockingQueue();
+    private final Scheduler scheduler;
 
-    public RxBleRadioImpl() {
+    public RxBleRadioImpl(Scheduler scheduler) {
+
+        if (isSamsungPhone() && isPhoneOsVersionJellyBeanMr2()) {
+            this.scheduler = AndroidSchedulers.mainThread();
+        } else {
+            this.scheduler = scheduler;
+        }
+
         new Thread(() -> {
             //noinspection InfiniteLoopStatement
             while (true) {
@@ -36,7 +47,7 @@ public class RxBleRadioImpl implements RxBleRadio {
                      * on the main thread.
                      */
                     Observable.just(rxBleRadioOperation)
-                            .observeOn(AndroidSchedulers.mainThread())
+                            .observeOn(this.scheduler)
                             .subscribe(Runnable::run);
 
                     semaphore.acquire();
@@ -65,5 +76,13 @@ public class RxBleRadioImpl implements RxBleRadio {
 
     private void log(String prefix, RxBleRadioOperation rxBleRadioOperation) {
         RxBleLog.d("%8s %s(%d)", prefix, rxBleRadioOperation.getClass().getSimpleName(), System.identityHashCode(rxBleRadioOperation));
+    }
+
+    private boolean isPhoneOsVersionJellyBeanMr2() {
+        return Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR2;
+    }
+
+    private boolean isSamsungPhone() {
+        return Build.MANUFACTURER.toLowerCase().trim().equals("samsung");
     }
 }
