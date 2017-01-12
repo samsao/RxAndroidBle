@@ -48,6 +48,11 @@ class RxBleConnectionMock implements RxBleConnection {
     }
 
     @Override
+    public void requestConnectionPriority(int priority) {
+
+    }
+
+    @Override
     public Observable<RxBleDeviceServices> discoverServices(long timeout, TimeUnit timeUnit) {
         return Observable.just(rxBleDeviceServices);
     }

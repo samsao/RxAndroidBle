@@ -48,6 +48,9 @@ public interface RxBleConnection {
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    void requestConnectionPriority(int priority);
+
     /**
      * Performs GATT service discovery and emits discovered results. After service discovery you can walk through
      * {@link android.bluetooth.BluetoothGattService}s and {@link BluetoothGattCharacteristic}s.
