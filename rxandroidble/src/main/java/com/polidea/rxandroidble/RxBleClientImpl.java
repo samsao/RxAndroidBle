@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.location.LocationManager;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -28,11 +29,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import rx.Observable;
 import rx.Scheduler;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
@@ -64,7 +66,7 @@ class RxBleClientImpl extends RxBleClient {
     public static RxBleClientImpl getInstance(@NonNull Context context) {
         final Context applicationContext = context.getApplicationContext();
         final RxBleAdapterWrapper rxBleAdapterWrapper = new RxBleAdapterWrapper(BluetoothAdapter.getDefaultAdapter());
-        final RxBleRadioImpl rxBleRadio = new RxBleRadioImpl();
+        final RxBleRadioImpl rxBleRadio = new RxBleRadioImpl(getRxBleRadioScheduler());
         final RxBleAdapterStateObservable adapterStateObservable = new RxBleAdapterStateObservable(applicationContext);
         final BleConnectionCompat bleConnectionCompat = new BleConnectionCompat(context);
         final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -193,5 +195,21 @@ class RxBleClientImpl extends RxBleClient {
                     }
                 })
                 .share();
+    }
+
+    private static Scheduler getRxBleRadioScheduler() {
+        if (isSamsungPhone() && isPhoneOsVersionJellyBeanMr2()) {
+            return AndroidSchedulers.mainThread();
+        }
+
+        return Schedulers.from(Executors.newSingleThreadExecutor());
+    }
+
+    private static boolean isPhoneOsVersionJellyBeanMr2() {
+        return Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR2;
+    }
+
+    private static boolean isSamsungPhone() {
+        return "samsung".equalsIgnoreCase(Build.MANUFACTURER.trim());
     }
 }
