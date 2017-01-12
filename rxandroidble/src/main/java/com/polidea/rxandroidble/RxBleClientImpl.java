@@ -64,11 +64,11 @@ class RxBleClientImpl extends RxBleClient {
     public static RxBleClientImpl getInstance(@NonNull Context context) {
         final Context applicationContext = context.getApplicationContext();
         final RxBleAdapterWrapper rxBleAdapterWrapper = new RxBleAdapterWrapper(BluetoothAdapter.getDefaultAdapter());
-        final RxBleRadioImpl rxBleRadio = new RxBleRadioImpl();
-        final RxBleAdapterStateObservable adapterStateObservable = new RxBleAdapterStateObservable(applicationContext);
-        final BleConnectionCompat bleConnectionCompat = new BleConnectionCompat(context);
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         final Scheduler gattCallbacksProcessingScheduler = Schedulers.from(executor);
+        final RxBleRadioImpl rxBleRadio = new RxBleRadioImpl(Schedulers.from(Executors.newSingleThreadExecutor()));
+        final RxBleAdapterStateObservable adapterStateObservable = new RxBleAdapterStateObservable(applicationContext);
+        final BleConnectionCompat bleConnectionCompat = new BleConnectionCompat(context);
         final LocationManager locationManager = (LocationManager) applicationContext.getSystemService(Context.LOCATION_SERVICE);
         final CheckerLocationPermission checkerLocationPermission = new CheckerLocationPermission(applicationContext);
         final CheckerLocationProvider checkerLocationProvider = new CheckerLocationProvider(locationManager);

@@ -1,5 +1,7 @@
 package com.polidea.rxandroidble.internal.radio;
 
+import android.os.Build;
+
 import com.polidea.rxandroidble.internal.RxBleLog;
 import com.polidea.rxandroidble.internal.RxBleRadio;
 import com.polidea.rxandroidble.internal.RxBleRadioOperation;
@@ -7,6 +9,7 @@ import com.polidea.rxandroidble.internal.RxBleRadioOperation;
 import java.util.concurrent.Semaphore;
 
 import rx.Observable;
+import rx.Scheduler;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
 import rx.functions.Action1;
@@ -14,8 +17,15 @@ import rx.functions.Action1;
 public class RxBleRadioImpl implements RxBleRadio {
 
     private OperationPriorityFifoBlockingQueue queue = new OperationPriorityFifoBlockingQueue();
+    private final Scheduler scheduler;
 
-    public RxBleRadioImpl() {
+    public RxBleRadioImpl(Scheduler scheduler) {
+        if (isSamsungPhone() && isPhoneOsVersionJellyBeanMr2()) {
+            this.scheduler = AndroidSchedulers.mainThread();
+        } else {
+            this.scheduler = scheduler;
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -40,14 +50,13 @@ public class RxBleRadioImpl implements RxBleRadio {
                          * on the main thread.
                          */
                         Observable.just(rxBleRadioOperation)
-                                .observeOn(AndroidSchedulers.mainThread())
+                                .observeOn(RxBleRadioImpl.this.scheduler)
                                 .subscribe(new Action1<RxBleRadioOperation>() {
                                     @Override
                                     public void call(RxBleRadioOperation rxBleRadioOperation1) {
                                         rxBleRadioOperation1.run();
                                     }
                                 });
-
                         semaphore.acquire();
                         RxBleRadioImpl.this.log("FINISHED", rxBleRadioOperation);
                     } catch (InterruptedException e) {
@@ -81,5 +90,13 @@ public class RxBleRadioImpl implements RxBleRadio {
 
     private void log(String prefix, RxBleRadioOperation rxBleRadioOperation) {
         RxBleLog.d("%8s %s(%d)", prefix, rxBleRadioOperation.getClass().getSimpleName(), System.identityHashCode(rxBleRadioOperation));
+    }
+
+    private boolean isPhoneOsVersionJellyBeanMr2() {
+        return Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN_MR2;
+    }
+
+    private boolean isSamsungPhone() {
+        return "samsung".equalsIgnoreCase(Build.MANUFACTURER.trim());
     }
 }
