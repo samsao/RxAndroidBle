@@ -14,6 +14,7 @@ import com.polidea.rxandroidble.RxBleDeviceServices;
 import com.polidea.rxandroidble.exceptions.BleCannotSetCharacteristicNotificationException;
 import com.polidea.rxandroidble.exceptions.BleConflictingNotificationAlreadySetException;
 import com.polidea.rxandroidble.internal.RxBleRadio;
+import com.polidea.rxandroidble.internal.RxBleRadioOperation;
 import com.polidea.rxandroidble.internal.operations.RxBleRadioOperationCharacteristicRead;
 import com.polidea.rxandroidble.internal.operations.RxBleRadioOperationCharacteristicWrite;
 import com.polidea.rxandroidble.internal.operations.RxBleRadioOperationDescriptorRead;
@@ -22,8 +23,8 @@ import com.polidea.rxandroidble.internal.operations.RxBleRadioOperationMtuReques
 import com.polidea.rxandroidble.internal.operations.RxBleRadioOperationReadRssi;
 import com.polidea.rxandroidble.internal.operations.RxBleRadioOperationServicesDiscover;
 import com.polidea.rxandroidble.internal.util.ByteAssociation;
-import com.polidea.rxandroidble.internal.util.CharacteristicNotificationId;
 import com.polidea.rxandroidble.internal.util.CharacteristicChangedEvent;
+import com.polidea.rxandroidble.internal.util.CharacteristicNotificationId;
 import com.polidea.rxandroidble.internal.util.ObservableUtil;
 
 import java.util.HashMap;
@@ -40,6 +41,7 @@ import rx.functions.Action1;
 import rx.functions.Actions;
 import rx.functions.Func0;
 import rx.functions.Func1;
+import rx.functions.Func3;
 import rx.schedulers.Schedulers;
 
 import static android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE;
@@ -527,5 +529,10 @@ public class RxBleConnectionImpl implements RxBleConnection {
     @Override
     public Observable<Integer> readRssi() {
         return rxBleRadio.queue(new RxBleRadioOperationReadRssi(gattCallback, bluetoothGatt, timeoutScheduler));
+    }
+
+    @Override
+    public <T> Observable<T> queue(Func3<Scheduler, BluetoothGatt, RxBleGattCallback, RxBleRadioOperation<T>> builder) {
+        return rxBleRadio.queue(builder.call(rxBleRadio.scheduler(), bluetoothGatt, gattCallback));
     }
 }
